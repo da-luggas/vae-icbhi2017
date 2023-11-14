@@ -1,9 +1,3 @@
-# Custom files and folders
-ICBHI_final_database/
-runs/
-*.png
-*.sh
-
 # Created by https://www.toptal.com/developers/gitignore/api/python,visualstudiocode,macos
 # Edit at https://www.toptal.com/developers/gitignore?templates=python,visualstudiocode,macos
 
@@ -232,3 +226,9 @@ pyrightconfig.json
 .ionide
 
 # End of https://www.toptal.com/developers/gitignore/api/python,visualstudiocode,macos
+
+runs/
+*.png
+*.sh
+*.db
+optimize.py
