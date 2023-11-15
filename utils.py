@@ -206,9 +206,9 @@ def test_model(encoder, decoder, val_dataloader, test_dataloader, encoder_state,
     tnr = np.sum((predictions == 0) & (test_labels == 0)) / np.sum(test_labels == 0)
     balanced_accuracy = 0.5 * (tpr + tnr)
 
-    print("ROC-AUC Score: ", roc_auc.round(2))
-    print("BALACC: ", balanced_accuracy.round(2))
-    print("TPR: ", tpr.round(2))
-    print("TNR: ", tnr.round(2))
+    # print("ROC-AUC Score: ", roc_auc.round(2))
+    # print("BALACC: ", balanced_accuracy.round(2))
+    # print("TPR: ", tpr.round(2))
+    # print("TNR: ", tnr.round(2))
 
     return roc_auc, balanced_accuracy, tpr, tnr
