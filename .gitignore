@@ -231,5 +231,4 @@ runs/
 *.png
 *.sh
 *.db
-optimize.py
 *.pt

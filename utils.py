@@ -121,8 +121,8 @@ def train_epoch(encoder_model, encoder_optimizer, decoder_model, decoder_optimiz
     return train_loss, data[:16], decoded[:16]
 
 def val_epoch(encoder_model, encoder_optimizer, decoder_model, decoder_optimizer, criterion, dataloader, args):
-    schedulerE = optim.lr_scheduler.ReduceLROnPlateau(encoder_optimizer, 'min', patience=5, factor=0.5, verbose=True)
-    schedulerD = optim.lr_scheduler.ReduceLROnPlateau(decoder_optimizer, 'min', patience=5, factor=0.5, verbose=True)
+    schedulerE = optim.lr_scheduler.ReduceLROnPlateau(encoder_optimizer, 'min', patience=5, factor=0.1, verbose=True, min_lr=1e-5)
+    schedulerD = optim.lr_scheduler.ReduceLROnPlateau(decoder_optimizer, 'min', patience=5, factor=0.1, verbose=True, min_lr=1e-5)
 
     val_loss = 0
     encoder_model.eval()
