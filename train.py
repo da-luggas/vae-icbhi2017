@@ -37,8 +37,8 @@ if __name__ == "__main__":
     test_loader = DataLoader(test_set, batch_size=args.bs)
 
     # Initialize the mode and optimizer
-    encoder = model.Encoder(args.nc, args.nz, args.ndf).to(args.device)
-    decoder = model.Decoder(args.nc, args.nz, args.ngf).to(args.device)
+    encoder = model.Encoder(1, args.nz, args.nf).to(args.device)
+    decoder = model.Decoder(1, args.nz, args.nf).to(args.device)
     optimizerE = optim.Adam(encoder.parameters(), lr=args.lr, betas=(args.beta1, 0.999))
     optimizerD = optim.Adam(decoder.parameters(), lr=args.lr, betas=(args.beta1, 0.999))
 

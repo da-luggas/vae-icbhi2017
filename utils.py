@@ -87,10 +87,12 @@ def split_data(dataset, prevent_leakage=False, seed=999):
 
 def train_epoch(encoder_model, encoder_optimizer, decoder_model, decoder_optimizer, criterion, dataloader, args):
     train_loss = 0
-    model.train()
+    encoder_model.train()
+    decoder_model.train()
 
     for idx, (data, _) in enumerate(dataloader, 0):
         data = data.to(args.device)
+        data = data.unsqueeze(1)
 
         # Encode data
         mu, logvar = encoder_model(data)
@@ -109,7 +111,7 @@ def train_epoch(encoder_model, encoder_optimizer, decoder_model, decoder_optimiz
 
         encoder_model.zero_grad()
         decoder_model.zero_grad()
-        train_loss.backward()
+        loss.backward()
         encoder_optimizer.step()
         decoder_optimizer.step()
         train_loss += loss.item()
@@ -129,6 +131,7 @@ def val_epoch(encoder_model, encoder_optimizer, decoder_model, decoder_optimizer
     with torch.no_grad():
         for i, (data, _) in enumerate(dataloader, 0):
             data = data.to(args.device)
+            data = data.unsqueeze(1)
             mu, logvar = encoder_model(data)
             std = torch.exp(0.5*logvar)
             eps = torch.randn_like(std)
@@ -150,7 +153,7 @@ def test_model(encoder, decoder, val_dataloader, test_dataloader, encoder_state,
     encoder.eval()
     decoder.eval()
 
-    criterion = nn.GaussianNLLLoss(reduction='none')
+    criterion = nn.MSELoss(reduction='none')
     val_scores = []
     val_labels = []
 
@@ -160,6 +163,7 @@ def test_model(encoder, decoder, val_dataloader, test_dataloader, encoder_state,
     with torch.no_grad():
         for data, label in val_dataloader:
             data = data.to(args.device)
+            data = data.unsqueeze(1)
             mu, logvar = encoder(data)
             std = torch.exp(0.5*logvar)
             eps = torch.randn_like(std)
@@ -175,6 +179,7 @@ def test_model(encoder, decoder, val_dataloader, test_dataloader, encoder_state,
 
         for data, label in test_dataloader:
             data = data.to(args.device)
+            data = data.unsqueeze(1)
             mu, logvar = encoder(data)
             std = torch.exp(0.5*logvar)
             eps = torch.randn_like(std)

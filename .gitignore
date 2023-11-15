@@ -232,3 +232,4 @@ runs/
 *.sh
 *.db
 optimize.py
+*.pt

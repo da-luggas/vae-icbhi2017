@@ -30,8 +30,8 @@ if __name__ == "__main__":
     test_loader = DataLoader(test_set, batch_size=args.bs)
 
     # Initialize models and optimizers
-    encoder = Encoder(args.nc, args.nz, args.ndf).to(args.device)
-    decoder = Decoder(args.nc, args.nz, args.ngf).to(args.device)
+    encoder = Encoder(1, args.nz, args.nf).to(args.device)
+    decoder = Decoder(1, args.nz, args.nf).to(args.device)
 
     # Evaluation model generalization using test set
     roc_auc, balacc, tpr, tnr = utils.test_model(encoder, decoder, val_loader, test_loader, encoder_state, decoder_state, args)
