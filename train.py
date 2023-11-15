@@ -49,6 +49,10 @@ if __name__ == "__main__":
     # Initialize loss
     criterion = nn.MSELoss(reduction="sum")
 
+    # Initialize scheduler
+    schedulerE = optim.lr_scheduler.ReduceLROnPlateau(optimizerE, 'min', patience=args.patience // 2, factor=0.1, min_lr=1e-5)
+    schedulerD = optim.lr_scheduler.ReduceLROnPlateau(optimizerD, 'min', patience=args.patience // 2, factor=0.1, min_lr=1e-5)
+
     # Initialize tensorboard
     writer = SummaryWriter()
     # Initialize learning rate scheduler
@@ -61,8 +65,8 @@ if __name__ == "__main__":
         train_loss, source_example, recon_example = utils.train_epoch(
             encoder, optimizerE, decoder, optimizerD, criterion, train_loader, args
         )
-        val_loss = utils.val_epoch(
-            encoder, optimizerE, decoder, optimizerD, criterion, val_loader, args
+        val_loss = utils.eval_epoch(
+                encoder, schedulerE, decoder, schedulerD, criterion, val_loader, args
         )
 
         writer.add_scalar("Loss/Train", train_loss, global_step=epoch)

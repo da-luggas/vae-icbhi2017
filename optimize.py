@@ -39,9 +39,9 @@ if __name__ == "__main__":
     test_loader = DataLoader(test_set, batch_size=args.bs)
 
     def objective(trial):
-        args.nz = trial.suggest_int('nz', 2, 1000)
-        args.nf = trial.suggest_categorical('nf', [16, 32, 64, 128])
-        args.beta1 = trial.suggest_float('beta1', 0, 1)
+        args.nz = 2 #trial.suggest_int('nz', 2, 1000)
+        args.nf = 2# trial.suggest_categorical('nf', [16, 32, 64, 128])
+        args.beta1 = 0.5 #trial.suggest_float('beta1', 0, 1)
         # Initialize the mode and optimizer
         encoder = model.Encoder(1, args.nz, args.nf).to(args.device)
         decoder = model.Decoder(1, args.nz, args.nf).to(args.device)
@@ -55,6 +55,10 @@ if __name__ == "__main__":
         # Initialize loss
         criterion = nn.MSELoss(reduction="sum")
 
+        # Initialize scheduler
+        schedulerE = optim.lr_scheduler.ReduceLROnPlateau(optimizerE, 'min', patience=args.patience // 2, factor=0.1, min_lr=1e-5)
+        schedulerD = optim.lr_scheduler.ReduceLROnPlateau(optimizerD, 'min', patience=args.patience // 2, factor=0.1, min_lr=1e-5)
+
         # Initialize tensorboard
         writer = SummaryWriter()
         # Initialize learning rate scheduler
@@ -64,11 +68,12 @@ if __name__ == "__main__":
         waiting = 0
 
         for epoch in tqdm(range(args.epochs)):
+            print(waiting)
             train_loss, source_example, recon_example = utils.train_epoch(
                 encoder, optimizerE, decoder, optimizerD, criterion, train_loader, args
             )
-            val_loss = utils.val_epoch(
-                encoder, optimizerE, decoder, optimizerD, criterion, val_loader, args
+            val_loss = utils.eval_epoch(
+                encoder, schedulerE, decoder, schedulerD, criterion, val_loader, args
             )
 
             writer.add_scalar("Loss/Train", train_loss, global_step=epoch)

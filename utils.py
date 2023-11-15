@@ -120,9 +120,7 @@ def train_epoch(encoder_model, encoder_optimizer, decoder_model, decoder_optimiz
 
     return train_loss, data[:16], decoded[:16]
 
-def val_epoch(encoder_model, encoder_optimizer, decoder_model, decoder_optimizer, criterion, dataloader, args):
-    schedulerE = optim.lr_scheduler.ReduceLROnPlateau(encoder_optimizer, 'min', patience=5, factor=0.1, verbose=True, min_lr=1e-5)
-    schedulerD = optim.lr_scheduler.ReduceLROnPlateau(decoder_optimizer, 'min', patience=5, factor=0.1, verbose=True, min_lr=1e-5)
+def eval_epoch(encoder_model, encoder_scheduler, decoder_model, decoder_scheduler, criterion, dataloader, args):
 
     val_loss = 0
     encoder_model.eval()
@@ -143,8 +141,9 @@ def val_epoch(encoder_model, encoder_optimizer, decoder_model, decoder_optimizer
             loss = reconstruction_loss + kl_divergence
             val_loss += loss.item()
 
-    schedulerE.step(val_loss)
-    schedulerD.step(val_loss)
+    val_loss = val_loss / len(dataloader)
+    encoder_scheduler.step(val_loss)
+    decoder_scheduler.step(val_loss)
     return val_loss
 
 def test_model(encoder, decoder, val_dataloader, test_dataloader, encoder_state, decoder_state, args):
