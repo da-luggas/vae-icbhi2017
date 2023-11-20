@@ -228,6 +228,7 @@ pyrightconfig.json
 # End of https://www.toptal.com/developers/gitignore/api/python,visualstudiocode,macos
 
 runs/
+.runs/
 *.png
 *.sh
 *.db

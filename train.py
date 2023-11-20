@@ -21,7 +21,7 @@ if __name__ == "__main__":
     parser.add_argument("--dataset", default="/home/lukas/thesis/anogan2d/dataset", type=str, help="Location of the ICBHI dataset",)
     parser.add_argument("--bs", default=64, type=int, help="Batch size during training.")
     parser.add_argument("--nz", default=100, type=int, help="Size of z latent vector.")
-    parser.add_argument("--nf", default=128, type=int, help="Size of feature maps.")
+    parser.add_argument("--nf", default=128, type=int, help="Size of feature  maps.")
     parser.add_argument("--epochs", default=1000, type=int, help="Number of training epochs.")
     parser.add_argument("--lr", default=0.0002, type=float, help="Learning rate for optimizers.")
     parser.add_argument("--beta1", default=0.5, type=float, help="Beta1 hyperparameter for Adam optimizers.",)
@@ -29,12 +29,8 @@ if __name__ == "__main__":
     parser.add_argument("--device", default=torch.device("mps") if torch.backends.mps.is_available() else (torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")), help="Device to run training on",)
     args = parser.parse_args()
 
-    # Split and load data
-    train_set, val_set, test_set = utils.split_data(args.dataset)
-
-    train_loader = DataLoader(train_set, batch_size=args.bs)
-    val_loader = DataLoader(val_set, batch_size=args.bs)
-    test_loader = DataLoader(test_set, batch_size=args.bs)
+    # Load data
+    train_loader, val_loader, test_loader = utils.load_data(args.dataset, args.bs)
 
     # Initialize the mode and optimizer
     encoder = model.Encoder(1, args.nz, args.nf).to(args.device)
@@ -46,12 +42,9 @@ if __name__ == "__main__":
     encoder.apply(model.xavier_init)
     decoder.apply(model.xavier_init)
 
-    # Initialize loss
-    criterion = nn.MSELoss(reduction="sum")
-
     # Initialize scheduler
-    schedulerE = optim.lr_scheduler.ReduceLROnPlateau(optimizerE, 'min', patience=args.patience // 2, factor=0.1, min_lr=1e-5)
-    schedulerD = optim.lr_scheduler.ReduceLROnPlateau(optimizerD, 'min', patience=args.patience // 2, factor=0.1, min_lr=1e-5)
+    schedulerE = optim.lr_scheduler.ReduceLROnPlateau(optimizerE, 'min', patience=args.patience // 2, factor=0.5)
+    schedulerD = optim.lr_scheduler.ReduceLROnPlateau(optimizerD, 'min', patience=args.patience // 2, factor=0.5)
 
     # Initialize tensorboard
     writer = SummaryWriter()
@@ -63,10 +56,10 @@ if __name__ == "__main__":
 
     for epoch in tqdm(range(args.epochs)):
         train_loss, source_example, recon_example = utils.train_epoch(
-            encoder, optimizerE, decoder, optimizerD, criterion, train_loader, args
+            encoder, optimizerE, decoder, optimizerD, train_loader, args
         )
         val_loss = utils.eval_epoch(
-                encoder, schedulerE, decoder, schedulerD, criterion, val_loader, args
+                encoder, schedulerE, decoder, schedulerD, val_loader, args
         )
 
         writer.add_scalar("Loss/Train", train_loss, global_step=epoch)
@@ -77,10 +70,10 @@ if __name__ == "__main__":
             img_grid_original = vutils.make_grid(source_example, normalize=True)
             img_grid_reconstructed = vutils.make_grid(recon_example, normalize=True)
 
-            writer.add_image("Image/Original", img_grid_original, global_step=epoch)
-            writer.add_image(
-                "Image/Reconstructed", img_grid_reconstructed, global_step=epoch
-            )
+            # writer.add_image("Image/Original", img_grid_original, global_step=epoch)
+            # writer.add_image(
+            #    "Image/Reconstructed", img_grid_reconstructed, global_step=epoch
+            # )
 
         # Early stopping and state dict saving
         if val_loss < best_val_loss:

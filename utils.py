@@ -1,26 +1,13 @@
-import argparse
-import os
 import random
+
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.parallel
-import torch.optim as optim
-from torch.utils.data import DataLoader, random_split, Subset, Dataset
-from torch.utils.tensorboard import SummaryWriter
-import torchvision.datasets as dset
-import torchvision.transforms as transforms
-import torchvision.utils as vutils
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-from tqdm import tqdm
-
+from sklearn.metrics import balanced_accuracy_score, roc_auc_score
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import roc_auc_score
+from torch.utils.data import DataLoader, Dataset
 
-
-import model
-import utils
 
 class RespiratorySoundDataset(Dataset):
     def __init__(self, X, y):
@@ -40,57 +27,44 @@ def set_seeds(seed=999):
     torch.manual_seed(seed)
     torch.use_deterministic_algorithms(True)
 
-def get_optimal_threshold(losses, labels):
-    accuracies = []
-    for threshold in losses:
-        y_pred = losses > threshold
-        tpr = np.sum((y_pred == 1) & (labels == 1)) / np.sum(labels == 1)
-        tnr = np.sum((y_pred == 0) & (labels == 0)) / np.sum(labels == 0)
-        accuracy = 0.5 * (tpr + tnr)
-        accuracies.append(accuracy)
-    optimal_threshold = losses[np.argmax(accuracies)]
-    return optimal_threshold
+def load_data(dataset, batch_size):
+    saved_data = torch.load(dataset)
 
-
-def split_data(dataset, prevent_leakage=False, seed=999):
-    data = torch.load(dataset)
-    
-    recording_ids = data['recording_ids']
-    cycles = data['cycles']
-    labels = data['labels']
-
-    if prevent_leakage:
-        unique_recording_ids = torch.unique(recording_ids)
-        train_ids, test_ids = train_test_split(unique_recording_ids, test_size=0.2, random_state=seed, stratify=labels)
-
-        # Create masks for selecting data
-        train_mask = torch.isin(recording_ids, train_ids)
-        test_mask = torch.isin(recording_ids, test_ids)
-
-        # Separate data based on recording_id
-        X_train, y_train = cycles[train_mask], labels[train_mask]
-        X_test, y_test = cycles[test_mask], labels[test_mask]
-    else:
-        # Random splitting 80/20
-        X_train, X_test, y_train, y_test = train_test_split(cycles, labels, test_size=0.2, random_state=seed, stratify=labels)
-
-    # Further splitting of train set into validation
-    X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.2, random_state=seed, stratify=y_train)
-
-    X_train, y_train = X_train[y_train == 0], y_train[y_train == 0]
+    X_train, X_val, X_test, y_train, y_val, y_test = saved_data['X_train'], saved_data['X_val'], saved_data['X_test'], saved_data['y_train'], saved_data['y_val'], saved_data['y_test']
 
     train_set = RespiratorySoundDataset(X_train, y_train)
     val_set = RespiratorySoundDataset(X_val, y_val)
     test_set = RespiratorySoundDataset(X_test, y_test)
+    
+    train_loader = DataLoader(train_set, batch_size=batch_size)
+    val_loader = DataLoader(val_set, batch_size=batch_size)
+    test_loader = DataLoader(test_set, batch_size=batch_size)
 
-    return train_set, val_set, test_set
+    return train_loader, val_loader, test_loader
 
-def train_epoch(encoder_model, encoder_optimizer, decoder_model, decoder_optimizer, criterion, dataloader, args):
+def get_optimal_threshold(losses, labels):
+    unique_losses = np.unique(losses)
+    best_threshold = unique_losses[0]
+    best_bal_acc = 0
+
+    for threshold in unique_losses:
+        predictions = losses > threshold
+        bal_acc = balanced_accuracy_score(labels, predictions)
+
+        if bal_acc > best_bal_acc:
+            best_bal_acc = bal_acc
+            best_threshold = threshold
+
+    return best_threshold
+
+def train_epoch(encoder_model, encoder_optimizer, decoder_model, decoder_optimizer, dataloader, args):
+    criterion = nn.MSELoss(reduction="sum")
+    
     train_loss = 0
     encoder_model.train()
     decoder_model.train()
 
-    for idx, (data, _) in enumerate(dataloader, 0):
+    for data, _ in dataloader:
         data = data.to(args.device)
         data = data.unsqueeze(1)
 
@@ -120,14 +94,15 @@ def train_epoch(encoder_model, encoder_optimizer, decoder_model, decoder_optimiz
 
     return train_loss, data[:16], decoded[:16]
 
-def eval_epoch(encoder_model, encoder_scheduler, decoder_model, decoder_scheduler, criterion, dataloader, args):
+def eval_epoch(encoder_model, encoder_scheduler, decoder_model, decoder_scheduler, dataloader, args):
+    criterion = nn.MSELoss(reduction="sum")
 
     val_loss = 0
     encoder_model.eval()
     decoder_model.eval()
 
     with torch.no_grad():
-        for i, (data, _) in enumerate(dataloader, 0):
+        for data, _ in dataloader:
             data = data.to(args.device)
             data = data.unsqueeze(1)
             mu, logvar = encoder_model(data)
@@ -201,13 +176,6 @@ def test_model(encoder, decoder, val_dataloader, test_dataloader, encoder_state,
     predictions = (test_scores > threshold)
 
     roc_auc = roc_auc_score(test_labels, test_scores)
-    tpr = np.sum((predictions == 1) & (test_labels == 1)) / np.sum(test_labels == 1)
-    tnr = np.sum((predictions == 0) & (test_labels == 0)) / np.sum(test_labels == 0)
-    balanced_accuracy = 0.5 * (tpr + tnr)
+    balanced_accuracy = balanced_accuracy_score(test_labels, predictions)
 
-    # print("ROC-AUC Score: ", roc_auc.round(2))
-    # print("BALACC: ", balanced_accuracy.round(2))
-    # print("TPR: ", tpr.round(2))
-    # print("TNR: ", tnr.round(2))
-
-    return roc_auc, balanced_accuracy, tpr, tnr
+    return roc_auc, balanced_accuracy
