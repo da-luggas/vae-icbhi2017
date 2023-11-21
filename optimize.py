@@ -1,18 +1,14 @@
 import argparse
 import os
 
+import optuna
 import torch
-import torch.nn as nn
 import torch.nn.parallel
 import torch.optim as optim
-import torchvision.utils as vutils
-from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
-import optuna
-
-import model
+import model as model
 import utils
 
 if __name__ == "__main__":
@@ -25,7 +21,7 @@ if __name__ == "__main__":
     parser.add_argument("--nz", default=100, type=int, help="Size of z latent vector.")
     parser.add_argument("--nf", default=128, type=int, help="Size of feature maps.")
     parser.add_argument("--epochs", default=500, type=int, help="Number of training epochs.")
-    parser.add_argument("--lr", default=1e-3, type=float, help="Learning rate for optimizers.")
+    parser.add_argument("--lr", default=1e-4, type=float, help="Learning rate for optimizers.")
     parser.add_argument("--beta1", default=0.5, type=float, help="Beta1 hyperparameter for Adam optimizers.",)
     parser.add_argument("--patience", default=10, type=int, help="Patience for early stopping.")
     parser.add_argument("--device", default=torch.device("mps") if torch.backends.mps.is_available() else (torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")), help="Device to run training on",)
@@ -36,13 +32,14 @@ if __name__ == "__main__":
         args.nz = trial.suggest_int('nz', 2, 1000)
         args.nf = trial.suggest_categorical('nf', [16, 32, 64, 128])
         args.beta1 = trial.suggest_float('beta1', 0, 1)
+        # args.patience = trial.suggest_int('patience', 10, 50)
 
         # Load data
         train_loader, val_loader, test_loader = utils.load_data(args.dataset, args.bs)
 
         # Initialize the model and optimizer
-        encoder = model.Encoder(1, args.nz, args.nf).to(args.device)
-        decoder = model.Decoder(1, args.nz, args.nf).to(args.device)
+        encoder = model.Encoder(13, args.nz, args.nf).to(args.device)
+        decoder = model.Decoder(13, args.nz, args.nf).to(args.device)
         optimizerE = optim.Adam(encoder.parameters(), lr=args.lr, betas=(args.beta1, 0.999))
         optimizerD = optim.Adam(decoder.parameters(), lr=args.lr, betas=(args.beta1, 0.999))
 

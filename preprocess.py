@@ -4,9 +4,8 @@ import os
 import matplotlib.pyplot as plt
 import torch
 import torchaudio
-from torchaudio.transforms import MelSpectrogram, Resample
-
 from sklearn.model_selection import train_test_split
+from torchaudio.transforms import MFCC, Resample
 
 
 def print_melspec(melspec):
@@ -71,7 +70,9 @@ def zero_padding(tensor, target_length):
 
 def process_cycle(waveform, sr):
     # Extract mel spectrogram
-    mel_spec = MelSpectrogram(sample_rate=sr, n_mels=64, n_fft=256, hop_length=256 // 2)(waveform)
+    # mel_spec = MelSpectrogram(sample_rate=sr, n_mels=64, n_fft=256, hop_length=256 // 2)(waveform)
+    mel_spec = MFCC(sample_rate=sr, n_mfcc=13, melkwargs={'n_mels': 64, 'n_fft': 256, 'hop_length': 256 // 2, 'f_max': 2000})(waveform)
+
 
     # Convert to db scale
     mel_spec_db = torchaudio.transforms.AmplitudeToDB()(mel_spec)

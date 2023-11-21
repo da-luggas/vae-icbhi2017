@@ -33,8 +33,8 @@ if __name__ == "__main__":
     train_loader, val_loader, test_loader = utils.load_data(args.dataset, args.bs)
 
     # Initialize the mode and optimizer
-    encoder = model.Encoder(1, args.nz, args.nf).to(args.device)
-    decoder = model.Decoder(1, args.nz, args.nf).to(args.device)
+    encoder = model.Encoder(13, args.nz, args.nf).to(args.device)
+    decoder = model.Decoder(13, args.nz, args.nf).to(args.device)
     optimizerE = optim.Adam(encoder.parameters(), lr=args.lr, betas=(args.beta1, 0.999))
     optimizerD = optim.Adam(decoder.parameters(), lr=args.lr, betas=(args.beta1, 0.999))
 
@@ -67,8 +67,8 @@ if __name__ == "__main__":
 
         # Add images to compare to tensorboard
         if epoch % 5 == 0:
-            img_grid_original = vutils.make_grid(source_example, normalize=True)
-            img_grid_reconstructed = vutils.make_grid(recon_example, normalize=True)
+            img_grid_original = vutils.make_grid(source_example.unsqueeze(1), normalize=True)
+            img_grid_reconstructed = vutils.make_grid(recon_example.unsqueeze(1), normalize=True)
 
             writer.add_image("Image/Original", img_grid_original, global_step=epoch)
             writer.add_image(

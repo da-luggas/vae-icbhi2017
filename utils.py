@@ -5,7 +5,6 @@ import torch
 import torch.nn as nn
 import torch.nn.parallel
 from sklearn.metrics import balanced_accuracy_score, roc_auc_score
-from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, Dataset
 
 
@@ -66,7 +65,6 @@ def train_epoch(encoder_model, encoder_optimizer, decoder_model, decoder_optimiz
 
     for data, _ in dataloader:
         data = data.to(args.device)
-        data = data.unsqueeze(1)
 
         # Encode data
         mu, logvar = encoder_model(data)
@@ -104,7 +102,6 @@ def eval_epoch(encoder_model, encoder_scheduler, decoder_model, decoder_schedule
     with torch.no_grad():
         for data, _ in dataloader:
             data = data.to(args.device)
-            data = data.unsqueeze(1)
             mu, logvar = encoder_model(data)
             std = torch.exp(0.5*logvar)
             eps = torch.randn_like(std)
@@ -137,15 +134,14 @@ def test_model(encoder, decoder, val_dataloader, test_dataloader, encoder_state,
     with torch.no_grad():
         for data, label in val_dataloader:
             data = data.to(args.device)
-            data = data.unsqueeze(1)
             mu, logvar = encoder(data)
             std = torch.exp(0.5*logvar)
             eps = torch.randn_like(std)
             z = eps.mul(std).add_(mu)
             decoded = decoder(z)
 
-            reconstruction_loss_batch = torch.sum(criterion(decoded, data), axis=(1, 2, 3))
-            kl_divergence_batch = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), axis=(1, 2, 3))
+            reconstruction_loss_batch = torch.sum(criterion(decoded, data), axis=(1, 2))
+            kl_divergence_batch = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), axis=(1))
             loss_batch = reconstruction_loss_batch + kl_divergence_batch
 
             val_scores.extend(loss_batch.cpu().numpy())
@@ -153,15 +149,14 @@ def test_model(encoder, decoder, val_dataloader, test_dataloader, encoder_state,
 
         for data, label in test_dataloader:
             data = data.to(args.device)
-            data = data.unsqueeze(1)
             mu, logvar = encoder(data)
             std = torch.exp(0.5*logvar)
             eps = torch.randn_like(std)
             z = eps.mul(std).add_(mu)
             decoded = decoder(z)
 
-            reconstruction_loss_batch = torch.sum(criterion(decoded, data), axis=(1, 2, 3))
-            kl_divergence_batch = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), axis=(1, 2, 3))
+            reconstruction_loss_batch = torch.sum(criterion(decoded, data), axis=(1, 2))
+            kl_divergence_batch = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), axis=(1))
             loss_batch = reconstruction_loss_batch + kl_divergence_batch
 
             test_scores.extend(loss_batch.cpu().numpy())

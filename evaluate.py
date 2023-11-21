@@ -1,21 +1,16 @@
-import torch
-import numpy as np
-import random
-from sklearn.metrics import roc_auc_score, balanced_accuracy_score
-from model import Encoder, Decoder
-from torch.utils.data import DataLoader, random_split
-import torch.nn as nn
-
 import argparse
 
+import torch
+
 import utils
+from model import Decoder, Encoder
 
 if __name__ == "__main__":
     # Set seeds for reproducibility
     utils.set_seeds()
 
     parser = argparse.ArgumentParser(description="Training a VAE for respiratory sounds.")
-    parser.add_argument("--model", default=".runs/Oct11_09-37-57_code-server/saved_model.pth", type=str, help="Path to saved model from training",)
+    parser.add_argument("--model", default="runs/Nov21_09-30-29_code-server/model.pt", type=str, help="Path to saved model from training",)
     parser.add_argument("--dataset", default="dataset.pt", type=str, help="Location of the ICBHI dataset",)
     parser.add_argument("--bs", default=64, type=int, help="Batch size during training.")
     parser.add_argument("--nz", default=100, type=int, help="Size of z latent vector.")
@@ -37,8 +32,8 @@ if __name__ == "__main__":
     _, val_loader, test_loader = utils.load_data(args.dataset, args.bs)
 
     # Initialize models and optimizers
-    encoder = Encoder(1, args.nz, args.nf).to(args.device)
-    decoder = Decoder(1, args.nz, args.nf).to(args.device)
+    encoder = Encoder(13, args.nz, args.nf).to(args.device)
+    decoder = Decoder(13, args.nz, args.nf).to(args.device)
 
     # Evaluation model generalization using test set
     roc_auc, balacc = utils.test_model(encoder, decoder, val_loader, test_loader, encoder_state, decoder_state, args)
