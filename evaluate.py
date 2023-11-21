@@ -31,10 +31,10 @@ if __name__ == "__main__":
     # Load models state dict and args
     saved_model = torch.load(model_dir)
     encoder_state, decoder_state = saved_model['encoder_state_dict'], saved_model['decoder_state_dict']
-    # args = saved_model['args']
+    args = saved_model['args']
 
     # Load data
-    _, val_loader, test_loader = utils.load_data(args.dataset)
+    _, val_loader, test_loader = utils.load_data(args.dataset, args.bs)
 
     # Initialize models and optimizers
     encoder = Encoder(1, args.nz, args.nf).to(args.device)

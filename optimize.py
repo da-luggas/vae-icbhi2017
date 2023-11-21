@@ -35,6 +35,7 @@ if __name__ == "__main__":
         args.bs = trial.suggest_categorical('bs', [32, 64, 128])
         args.nz = trial.suggest_int('nz', 2, 1000)
         args.nf = trial.suggest_categorical('nf', [16, 32, 64, 128])
+        args.beta1 = trial.suggest_float('beta1', 0, 1)
 
         # Load data
         train_loader, val_loader, test_loader = utils.load_data(args.dataset, args.bs)

@@ -18,7 +18,7 @@ if __name__ == "__main__":
     utils.set_seeds()
 
     parser = argparse.ArgumentParser(description="Training a VAE for respiratory sounds.")
-    parser.add_argument("--dataset", default="/home/lukas/thesis/anogan2d/dataset", type=str, help="Location of the ICBHI dataset",)
+    parser.add_argument("--dataset", default="dataset.pt", type=str, help="Location of the ICBHI dataset",)
     parser.add_argument("--bs", default=64, type=int, help="Batch size during training.")
     parser.add_argument("--nz", default=100, type=int, help="Size of z latent vector.")
     parser.add_argument("--nf", default=128, type=int, help="Size of feature  maps.")
@@ -70,14 +70,14 @@ if __name__ == "__main__":
             img_grid_original = vutils.make_grid(source_example, normalize=True)
             img_grid_reconstructed = vutils.make_grid(recon_example, normalize=True)
 
-            # writer.add_image("Image/Original", img_grid_original, global_step=epoch)
-            # writer.add_image(
-            #    "Image/Reconstructed", img_grid_reconstructed, global_step=epoch
-            # )
+            writer.add_image("Image/Original", img_grid_original, global_step=epoch)
+            writer.add_image(
+                "Image/Reconstructed", img_grid_reconstructed, global_step=epoch
+            )
 
         # Early stopping and state dict saving
         if val_loss < best_val_loss:
-            best_loss = val_loss
+            best_val_loss = val_loss
             waiting = 0
 
             torch.save(
