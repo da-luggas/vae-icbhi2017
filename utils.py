@@ -79,7 +79,7 @@ def train_epoch(encoder_model, encoder_optimizer, decoder_model, decoder_optimiz
         # Calculate loss
         reconstruction_loss = criterion(decoded, data)
         kl_divergence = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
-        loss = reconstruction_loss + kl_divergence
+        loss = args.alpha * reconstruction_loss + (1 - args.alpha) * kl_divergence
 
         encoder_model.zero_grad()
         decoder_model.zero_grad()
@@ -110,7 +110,7 @@ def eval_epoch(encoder_model, encoder_scheduler, decoder_model, decoder_schedule
 
             reconstruction_loss = criterion(decoded, data)
             kl_divergence = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
-            loss = reconstruction_loss + kl_divergence
+            loss = args.alpha * reconstruction_loss + (1 - args.alpha) * kl_divergence
             val_loss += loss.item()
 
     val_loss = val_loss / len(dataloader)
@@ -142,7 +142,7 @@ def test_model(encoder, decoder, val_dataloader, test_dataloader, encoder_state,
 
             reconstruction_loss_batch = torch.sum(criterion(decoded, data), axis=(1, 2))
             kl_divergence_batch = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), axis=(1))
-            loss_batch = reconstruction_loss_batch + kl_divergence_batch
+            loss_batch = args.alpha * reconstruction_loss_batch + (1 - args.alpha) * kl_divergence_batch
 
             val_scores.extend(loss_batch.cpu().numpy())
             val_labels.extend(label.numpy())
@@ -157,7 +157,7 @@ def test_model(encoder, decoder, val_dataloader, test_dataloader, encoder_state,
 
             reconstruction_loss_batch = torch.sum(criterion(decoded, data), axis=(1, 2))
             kl_divergence_batch = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp(), axis=(1))
-            loss_batch = reconstruction_loss_batch + kl_divergence_batch
+            loss_batch = args.alpha * reconstruction_loss_batch + (1 - args.alpha) * kl_divergence_batch
 
             test_scores.extend(loss_batch.cpu().numpy())
             test_labels.extend(label.numpy())

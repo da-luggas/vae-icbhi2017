@@ -27,6 +27,7 @@ if __name__ == "__main__":
     parser.add_argument("--beta1", default=0.5, type=float, help="Beta1 hyperparameter for Adam optimizers.",)
     parser.add_argument("--patience", default=10, type=int, help="Patience for early stopping.")
     parser.add_argument("--device", default=torch.device("mps") if torch.backends.mps.is_available() else (torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")), help="Device to run training on",)
+    parser.add_argument("--alpha", default=0.5, type=float, help="Weighting parameter for MSE and KLD loss")
     args = parser.parse_args()
 
     # Load data

@@ -38,6 +38,7 @@ class Encoder(nn.Module):
         self.main = nn.Sequential(
             # input is ``(nc) x 26 x 128``
             nn.Conv1d(nc, ndf, 4, 2, 1, bias=False),
+            nn.BatchNorm1d(ndf),
             nn.LeakyReLU(0.2, inplace=True),
             # state size. ``(ndf) x 26 x 64``
             nn.Conv1d(ndf, ndf * 2, 4, 2, 1, bias=False),

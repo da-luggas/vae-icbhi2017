@@ -25,13 +25,14 @@ if __name__ == "__main__":
     parser.add_argument("--beta1", default=0.5, type=float, help="Beta1 hyperparameter for Adam optimizers.",)
     parser.add_argument("--patience", default=10, type=int, help="Patience for early stopping.")
     parser.add_argument("--device", default=torch.device("mps") if torch.backends.mps.is_available() else (torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")), help="Device to run training on",)
+    parser.add_argument("--alpha", default=0.5, type=float, help="Weighting parameter for MSE and KLD loss")
     args = parser.parse_args()
 
     def objective(trial):
         args.bs = trial.suggest_categorical('bs', [32, 64, 128])
         args.nz = trial.suggest_int('nz', 2, 1000)
         args.nf = trial.suggest_categorical('nf', [16, 32, 64, 128])
-        args.beta1 = trial.suggest_float('beta1', 0, 1)
+        args.alpha = trial.suggest_float('alpha', 0, 1)
         # args.patience = trial.suggest_int('patience', 10, 50)
 
         # Load data
